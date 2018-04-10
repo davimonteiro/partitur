@@ -1,0 +1,115 @@
+grammar io.beethoven.partitur.Partitur with org.eclipse.xtext.common.Terminals
+
+generate partitur "http://www.beethoven.io/partitur/Partitur"
+
+
+PartiturWorkflow:
+	'workflow' name=ID '{'
+		(tasks+=PartiturTask)*
+		(handlers+=PartiturHandler)*
+	 '}'
+;
+
+PartiturTask:
+	'task' name=ID '{'
+		(
+			partiturHttpRequest = HttpGet |
+			partiturHttpRequest = HttpPost |
+			partiturHttpRequest = HttpPut |
+			partiturHttpRequest = HttpDelete
+		)
+	 '}'
+;
+
+PartiturHandler:
+	'handler' name=ID '{'
+		'on' (event = EventType)
+		'when' conditions+=PartiturCondition (',' conditions+=PartiturCondition)*
+		'then' commands+=PartiturCommand (',' commands+=PartiturCommand)* 
+	 '}'
+;
+
+PartiturCondition:
+	(conditionFunction=PartiturConditionFunction)'('arg=STRING')' 
+;
+
+enum PartiturConditionFunction:
+	taskNameEqualsTo = 'taskNameEqualsTo' | 
+	taskResponseEqualsTo = 'taskResponseEqualsTo' | 
+	workflowNameEqualsTo = 'workflowNameEqualsTo' 
+;
+
+PartiturCommand:
+	(commandFunction=PartiturCommandFunction)'('arg=STRING')' 
+;
+
+enum PartiturCommandFunction:
+	startTask = 'startTask' |
+	startWorkflow = 'startWorkflow' |
+	stopWorkflow = 'stopWorkflow' |
+	cancelWorkflow = 'cancelWorkflow'
+;
+
+enum EventType:
+	// Task events
+	TASK_STARTED |
+	TASK_COMPLETED |
+	TASK_TIMEDOUT |
+	TASK_FAILED |
+	
+	// Workflow events
+	WORKFLOW_SCHEDULED |
+	WORKFLOW_STARTED |
+	WORKFLOW_COMPLETED
+;
+
+
+
+/********************************   HTTP Requests   ********************************/
+
+HttpGet:
+	'get' '(' url = STRING ')'
+		(uriVariables = UriVariables)? 
+		(headers += HttpHeader)* 
+		(params += QueryParam)* 
+;
+
+HttpPost:
+	'post' '(' url = STRING ')'
+		(uriVariables = UriVariables)?
+		(headers += HttpHeader)*
+		(body = HttpBody)?
+;
+
+HttpPut:
+	'put' '(' url = STRING ')'
+		(uriVariables = UriVariables)?
+		(headers += HttpHeader)*
+		(body = HttpBody)?
+;
+
+HttpDelete:
+	'delete' '(' url = STRING ')'
+		(uriVariables = UriVariables)?
+		(headers += HttpHeader)*
+;
+
+/********************************   HTTP Requests   ********************************/
+
+
+
+HttpHeader:
+	'.header(' name = STRING ',' value = STRING  ')'
+;
+
+UriVariables:
+	'.uriVariables(' values += STRING (',' values += STRING)* ')'
+;
+
+QueryParam:
+	'.queryParams(' name = STRING ',' value = STRING ')'
+;
+
+HttpBody:
+	'.body(' value = STRING ')'
+;
